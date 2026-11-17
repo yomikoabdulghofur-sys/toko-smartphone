@@ -6,6 +6,16 @@
   <title>Masuk – Toko Seluler</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .pwbox { position: relative; }
+    .pwbox input { width: 100%; padding-right: 84px; box-sizing: border-box; }
+    .pwbox button {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: none; border: 0; color: #94a3b8; cursor: pointer;
+      font-size: 14px; padding: 6px 8px;
+    }
+    .pwbox button:hover { color: #fff; }
+  </style>
 </head>
 <body class="auth">
   <form id="f" autocomplete="on">
@@ -15,10 +25,14 @@
       <input id="name" placeholder="Nama lengkap" autocomplete="name">
     </div>
     <input id="email" type="email" placeholder="Email" autocomplete="email" required>
-    <input id="pw" type="password" placeholder="Kata sandi (min. 8 karakter)" autocomplete="current-password" minlength="8" required>
+    <div class="pwbox">
+      <input id="pw" type="password" placeholder="Kata sandi (min. 8 karakter)" autocomplete="current-password" minlength="8" required>
+      <button type="button" id="eye" aria-label="Tampilkan kata sandi">Lihat</button>
+    </div>
     <button class="btn" id="go">Masuk</button>
     <div class="msg" id="m" role="alert"></div>
     <div class="sw"><span id="q">Belum punya akun?</span> <a id="tg" tabindex="0">Daftar</a></div>
+    <div class="sw"><a id="fg" tabindex="0">Lupa kata sandi?</a></div>
   </form>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -35,6 +49,14 @@
       });
     }
 
+    // Tombol lihat/sembunyikan kata sandi
+    $('eye').onclick = () => {
+      const show = $('pw').type === 'password';
+      $('pw').type = show ? 'text' : 'password';
+      $('eye').textContent = show ? 'Sembunyi' : 'Lihat';
+      $('eye').setAttribute('aria-label', show ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+    };
+
     $('tg').onclick = () => {
       reg = !reg;
       $('nm').hidden = !reg;
@@ -42,7 +64,21 @@
       $('go').textContent = reg ? 'Daftar' : 'Masuk';
       $('q').textContent = reg ? 'Sudah punya akun?' : 'Belum punya akun?';
       $('tg').textContent = reg ? 'Masuk' : 'Daftar';
+      $('fg').parentElement.hidden = reg;
+      $('pw').autocomplete = reg ? 'new-password' : 'current-password';
       $('m').textContent = '';
+    };
+
+    $('fg').onclick = async () => {
+      const m = $('m');
+      const email = $('email').value.trim();
+      m.className = 'msg';
+      if (!email) { m.textContent = 'Isi email Anda terlebih dahulu, lalu klik "Lupa kata sandi?".'; return; }
+      const redirectTo = location.href.replace(/login\.html.*$/, '') + 'reset.html';
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) { m.textContent = error.message; return; }
+      m.className = 'msg ok';
+      m.textContent = 'Jika email terdaftar, tautan untuk mengatur ulang kata sandi sudah dikirim.';
     };
 
     $('f').onsubmit = async (e) => {
@@ -62,9 +98,15 @@
       $('go').disabled = false;
 
       if (r.error) {
-        m.textContent = r.error.message.includes('Invalid login')
-          ? 'Email atau kata sandi salah.'
-          : r.error.message;
+        const msg = r.error.message || '';
+        if (msg.includes('Invalid login')) m.textContent = 'Email atau kata sandi salah. Jika lupa, klik "Lupa kata sandi?".';
+        else if (msg.includes('Email not confirmed')) m.textContent = 'Email belum dikonfirmasi. Cek kotak masuk Anda.';
+        else m.textContent = msg;
+        return;
+      }
+
+      if (reg && r.data.user && Array.isArray(r.data.user.identities) && r.data.user.identities.length === 0) {
+        m.textContent = 'Email ini sudah terdaftar. Silakan masuk, atau klik "Lupa kata sandi?" jika lupa.';
         return;
       }
 
