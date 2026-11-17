@@ -108,7 +108,10 @@ $('g').onclick = (e) => {
   const id = e.target.dataset.id;
   if (!id) return;
   if (!U) { location.href = 'login.html'; return; }
+  // [TAMBAHAN] admin tidak boleh membeli (aturan yang sama juga dijaga di database)
+  if (U.role === 'admin') { alert('Akun admin tidak dapat melakukan pembelian.'); return; }
   cur = P.find((p) => p.id == id);
+  if (!cur) return; // [TAMBAHAN] pengaman jika produk tidak ditemukan
   $('mt').textContent = cur.name;
   $('mp').textContent = cur.storage + ' · ' + rp(cur.price);
   $('qty').max = cur.stock;
@@ -122,9 +125,22 @@ const calc = () => { $('tot').textContent = rp(cur.price * Math.max(1, +$('qty')
 $('qty').oninput = calc;
 $('x').onclick = () => $('md').classList.remove('open');
 
+// [TAMBAHAN] jumlah otomatis dibatasi 1 sampai stok, agar total tidak melebihi stok
+$('qty').addEventListener('change', () => {
+  if (!cur) return;
+  $('qty').value = Math.min(Math.max(1, +$('qty').value || 1), cur.stock);
+  calc();
+});
+
+// [TAMBAHAN] tutup jendela pemesanan dengan tombol Esc atau klik area gelap
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('md').classList.remove('open'); });
+$('md').addEventListener('click', (e) => { if (e.target === $('md')) $('md').classList.remove('open'); });
+
 $('ok').onclick = async () => {
   const q = +$('qty').value, m = $('m');
   m.className = 'msg';
+  // [TAMBAHAN] lapisan pengaman kedua di sisi tampilan
+  if (!U || U.role === 'admin') { m.textContent = 'Akun admin tidak dapat melakukan pembelian.'; return; }
   if (!$('pay').value || !$('adr').value.trim() || q < 1 || q > cur.stock) {
     m.textContent = 'Lengkapi jumlah, metode pembayaran, dan alamat.';
     return;
