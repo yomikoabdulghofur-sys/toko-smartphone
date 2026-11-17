@@ -1,21 +1,82 @@
-<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Masuk – Toko Seluler</title><link rel="stylesheet" href="css/style.css"></head>
-<body class="auth"><form id="f" autocomplete="on">
-<h1 id="t">Masuk</h1><p id="s">Gunakan akun Anda untuk melanjutkan.</p>
-<div id="nm" hidden><input id="name" placeholder="Nama lengkap" autocomplete="name"></div>
-<input id="email" type="email" placeholder="Email" autocomplete="email" required>
-<input id="pw" type="password" placeholder="Kata sandi (min. 8 karakter)" autocomplete="current-password" minlength="8" required>
-<button class="btn" id="go">Masuk</button><div class="msg" id="m" role="alert"></div>
-<div class="sw"><span id="q">Belum punya akun?</span> <a id="tg" tabindex="0">Daftar</a></div></form>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="js/app.js"></script>
-<script>
-let reg=false;const $=i=>document.getElementById(i);
-me().then(u=>{if(u)location.replace(u.role==='admin'?'admin.html':'index.html')});
-$('tg').onclick=()=>{reg=!reg;$('nm').hidden=!reg;$('t').textContent=reg?'Buat akun':'Masuk';$('go').textContent=reg?'Daftar':'Masuk';$('q').textContent=reg?'Sudah punya akun?':'Belum punya akun?';$('tg').textContent=reg?'Masuk':'Daftar';$('m').textContent=''};
-$('f').onsubmit=async e=>{e.preventDefault();const m=$('m');m.className='msg';m.textContent='';$('go').disabled=true;
-const email=$('email').value.trim(),password=$('pw').value;
-const r=reg?await sb.auth.signUp({email,password,options:{data:{full_name:$('name').value.trim()}}}):await sb.auth.signInWithPassword({email,password});
-$('go').disabled=false;
-if(r.error){m.textContent=r.error.message.includes('Invalid login')?'Email atau kata sandi salah.':r.error.message;return}
-if(reg&&!r.data.session){m.className='msg ok';m.textContent='Akun dibuat. Cek email Anda untuk konfirmasi, lalu masuk.';return}
-const u=await me();location.replace(u?.role==='admin'?'admin.html':'index.html')};
-</script></body></html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Masuk – Toko Seluler</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth">
+  <form id="f" autocomplete="on">
+    <h1 id="t">Masuk</h1>
+    <p id="s">Gunakan akun Anda untuk melanjutkan.</p>
+    <div id="nm" hidden>
+      <input id="name" placeholder="Nama lengkap" autocomplete="name">
+    </div>
+    <input id="email" type="email" placeholder="Email" autocomplete="email" required>
+    <input id="pw" type="password" placeholder="Kata sandi (min. 8 karakter)" autocomplete="current-password" minlength="8" required>
+    <button class="btn" id="go">Masuk</button>
+    <div class="msg" id="m" role="alert"></div>
+    <div class="sw"><span id="q">Belum punya akun?</span> <a id="tg" tabindex="0">Daftar</a></div>
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const $ = (i) => document.getElementById(i);
+    let reg = false;
+
+    if (typeof me !== 'function') {
+      $('m').textContent = 'Gagal memuat js/app.js. Periksa path file dan lakukan hard refresh (Ctrl+Shift+R).';
+    } else {
+      me().then((u) => {
+        if (u) location.replace(u.role === 'admin' ? 'admin.html' : 'index.html');
+      });
+    }
+
+    $('tg').onclick = () => {
+      reg = !reg;
+      $('nm').hidden = !reg;
+      $('t').textContent = reg ? 'Buat akun' : 'Masuk';
+      $('go').textContent = reg ? 'Daftar' : 'Masuk';
+      $('q').textContent = reg ? 'Sudah punya akun?' : 'Belum punya akun?';
+      $('tg').textContent = reg ? 'Masuk' : 'Daftar';
+      $('m').textContent = '';
+    };
+
+    $('f').onsubmit = async (e) => {
+      e.preventDefault();
+      const m = $('m');
+      m.className = 'msg';
+      m.textContent = '';
+      $('go').disabled = true;
+
+      const email = $('email').value.trim();
+      const password = $('pw').value;
+
+      const r = reg
+        ? await sb.auth.signUp({ email, password, options: { data: { full_name: $('name').value.trim() } } })
+        : await sb.auth.signInWithPassword({ email, password });
+
+      $('go').disabled = false;
+
+      if (r.error) {
+        m.textContent = r.error.message.includes('Invalid login')
+          ? 'Email atau kata sandi salah.'
+          : r.error.message;
+        return;
+      }
+
+      if (reg && !r.data.session) {
+        m.className = 'msg ok';
+        m.textContent = 'Akun dibuat. Cek email Anda untuk konfirmasi, lalu masuk.';
+        return;
+      }
+
+      const u = await me();
+      location.replace(u && u.role === 'admin' ? 'admin.html' : 'index.html');
+    };
+  </script>
+</body>
+</html>
