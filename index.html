@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Toko Seluler</title><link rel="stylesheet" href="css/style.css"></head>
+<body><nav id="nav"></nav>
+<section class="hero"><h1>Smartphone terbaik.<br>Dikirim ke rumah Anda.</h1><p>Pilih perangkat, bayar dengan bank favorit Anda, kami urus sisanya.</p><a class="btn" href="#produk">Lihat produk</a></section>
+<main class="wrap" id="produk"><h2>Semua smartphone</h2><div class="grid" id="g"><div class="empty">Memuat produk…</div></div></main>
+<div class="modal" id="md"><div><h2 id="mt" style="font-size:24px;margin-bottom:6px"></h2><p id="mp" style="color:var(--mu);margin-bottom:20px"></p>
+<div class="row"><div><label for="qty">Jumlah</label><input id="qty" type="number" min="1" value="1"></div>
+<div><label for="pay">Metode pembayaran</label><select id="pay"><option value="">Pilih metode…</option>
+<optgroup label="Bank Indonesia"><option>BCA Virtual Account</option><option>Bank Mandiri</option><option>BNI</option><option>BRI</option><option>BSI (Bank Syariah Indonesia)</option><option>CIMB Niaga</option><option>Bank Permata</option><option>Bank Danamon</option><option>OCBC NISP</option><option>Bank Jago</option></optgroup>
+<optgroup label="Bank &amp; kartu internasional"><option>Visa</option><option>Mastercard</option><option>American Express</option><option>JCB</option><option>HSBC</option><option>Citibank</option><option>Standard Chartered</option><option>DBS Bank</option><option>Wire Transfer (SWIFT)</option><option>PayPal</option></optgroup></select></div></div>
+<label for="adr">Alamat pengiriman</label><textarea id="adr" rows="3"></textarea>
+<p style="font-size:18px;margin:4px 0 16px">Total: <b id="tot"></b></p>
+<div style="display:flex;gap:10px"><button class="btn" id="ok">Pesan sekarang</button><button class="btn g" id="x">Batal</button></div><div class="msg" id="m"></div></div></div>
+<footer>© Toko Seluler. Semua hak dilindungi.</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="js/app.js"></script>
+<script>
+const $=i=>document.getElementById(i);let U,P=[],cur;
+(async()=>{U=await me();nav(U,'s');
+const{data,error}=await sb.from('products').select('*').order('price');P=data||[];
+$('g').innerHTML=error?'<div class="empty">Produk gagal dimuat. Periksa konfigurasi Supabase.</div>':P.length?P.map(p=>`<div class="card"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" onerror="this.style.visibility='hidden'"><h3>${esc(p.name)}</h3><small>${esc(p.storage)} · Stok ${p.stock}</small><div class="pr">${rp(p.price)}</div><button class="btn" data-id="${p.id}" ${p.stock<1?'disabled':''}>${p.stock<1?'Stok habis':'Beli'}</button></div>`).join(''):'<div class="empty">Belum ada produk.</div>'})();
+$('g').onclick=e=>{const id=e.target.dataset.id;if(!id)return;if(!U)return location.href='login.html';cur=P.find(p=>p.id==id);$('mt').textContent=cur.name;$('mp').textContent=cur.storage+' · '+rp(cur.price);$('qty').max=cur.stock;$('qty').value=1;$('m').textContent='';calc();$('md').classList.add('open')};
+const calc=()=>$('tot').textContent=rp(cur.price*Math.max(1,+$('qty').value||1));$('qty').oninput=calc;
+$('x').onclick=()=>$('md').classList.remove('open');
+$('ok').onclick=async()=>{const q=+$('qty').value,m=$('m');m.className='msg';
+if(!$('pay').value||!$('adr').value.trim()||q<1||q>cur.stock){m.textContent='Lengkapi jumlah, metode pembayaran, dan alamat.';return}
+$('ok').disabled=true;
+const{error}=await sb.rpc('place_order',{p_product:cur.id,p_qty:q,p_payment:$('pay').value,p_address:$('adr').value.trim()});$('ok').disabled=false;
+if(error){m.textContent=error.message;return}location.href='orders.html'};
+</script></body></html>

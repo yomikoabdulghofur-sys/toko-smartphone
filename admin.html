@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin</title><link rel="stylesheet" href="css/style.css"></head>
+<body><nav id="nav"></nav><main class="wrap"><h2>Ringkasan</h2><div class="stats"><div><b id="s1">–</b><span>Pendapatan (lunas)</span></div><div><b id="s2">–</b><span>Pesanan</span></div><div><b id="s3">–</b><span>Menunggu pembayaran</span></div></div>
+<h2>Pesanan masuk</h2><div class="tw" style="margin-bottom:48px"><table><thead><tr><th>Pembeli</th><th>Produk</th><th>Jml</th><th>Total</th><th>Pembayaran</th><th>Alamat</th><th>Status</th></tr></thead><tbody id="ob"></tbody></table></div>
+<h2>Produk</h2><form id="pf" class="row" style="margin-bottom:20px"><div><label>Nama</label><input id="n" required></div><div><label>Harga (Rp)</label><input id="p" type="number" min="0" required></div><div><label>Penyimpanan</label><input id="st" placeholder="256 GB"></div><div><label>Stok</label><input id="sk" type="number" min="0" required></div><div><label>URL gambar</label><input id="im" placeholder="img/nama.png atau https://..."></div><div style="align-self:end"><button class="btn" style="width:100%;margin-bottom:12px">Tambah produk</button></div></form>
+<div class="tw"><table><thead><tr><th>Nama</th><th>Harga</th><th>Stok</th><th></th></tr></thead><tbody id="pb"></tbody></table></div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="js/app.js"></script>
+<script>const $=i=>document.getElementById(i);
+async function load(){
+const[{data:o},{data:p}]=await Promise.all([sb.from('orders').select('*, profiles(full_name,email)').order('created_at',{ascending:false}),sb.from('products').select('*').order('name')]);
+$('s1').textContent=rp((o||[]).filter(x=>x.status==='paid'||x.status==='done').reduce((a,x)=>a+x.total,0));$('s2').textContent=(o||[]).length;$('s3').textContent=(o||[]).filter(x=>x.status==='pending').length;
+$('ob').innerHTML=o?.length?o.map(x=>`<tr><td>${esc(x.profiles?.full_name||x.profiles?.email)}</td><td>${esc(x.product_name)}</td><td>${x.qty}</td><td>${rp(x.total)}</td><td>${esc(x.payment_method)}</td><td>${esc(x.address)}</td><td><select data-o="${x.id}" style="margin:0;padding:6px">${['pending','paid','done','cancel'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Belum ada pesanan.</td></tr>';
+$('pb').innerHTML=(p||[]).map(x=>`<tr><td>${esc(x.name)} <small style="color:var(--mu)">${esc(x.storage)}</small></td><td>${rp(x.price)}</td><td>${x.stock}</td><td><button class="btn g s" data-d="${x.id}">Hapus</button></td></tr>`).join('')}
+(async()=>{const u=await guard('admin');if(!u)return;nav(u,'a');load()})();
+document.body.addEventListener('change',async e=>{if(e.target.dataset.o){await sb.from('orders').update({status:e.target.value}).eq('id',e.target.dataset.o);load()}});
+document.body.addEventListener('click',async e=>{if(e.target.dataset.d&&confirm('Hapus produk ini?')){await sb.from('products').delete().eq('id',e.target.dataset.d);load()}});
+$('pf').onsubmit=async e=>{e.preventDefault();const{error}=await sb.from('products').insert({name:$('n').value,price:+$('p').value,storage:$('st').value,stock:+$('sk').value,image_url:$('im').value});if(error)return alert(error.message);e.target.reset();load()};
+</script></body></html>
