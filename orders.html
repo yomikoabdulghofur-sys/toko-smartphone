@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pesanan Saya</title><link rel="stylesheet" href="css/style.css"></head>
 <body><nav id="nav"></nav><main class="wrap"><h2>Pesanan saya</h2><div class="tw"><table><thead><tr><th>Tanggal</th><th>Produk</th><th>Jumlah</th><th>Total</th><th>Pembayaran</th><th>Status</th></tr></thead><tbody id="b"><tr><td colspan="6" class="empty">Memuat…</td></tr></tbody></table></div></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="js/app.js"></script>
-<script>(async()=>{const u=await guard();if(!u)return;nav(u,'o');
+<script>(async()=>{const u=await guard('pembeli');if(!u)return;nav(u,'o');
 const{data}=await sb.from('orders').select('*').eq('user_id',u.id).order('created_at',{ascending:false});
 document.getElementById('b').innerHTML=data?.length?data.map(o=>`<tr><td>${new Date(o.created_at).toLocaleDateString('id-ID')}</td><td>${esc(o.product_name)}</td><td>${o.qty}</td><td>${rp(o.total)}</td><td>${esc(o.payment_method)}</td><td><span class="tag ${o.status}">${o.status}</span></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Belum ada pesanan. Mulai dari halaman Toko.</td></tr>'})();</script></body></html>
